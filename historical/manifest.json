@@ -1,0 +1,25 @@
+{
+  "pc": {
+    "source_file": "model2.ipynb",
+    "original_sha256": "05a0b5fec06cc243c457b9726883fc9978d05968336be483f56af4fbd371bb0c",
+    "export_file": "model2.pc.ipynb",
+    "export_sha256": "f9d5a5bcd2476a40159540b9b5b4cbfaa119327c5dd39b7e8b1566fc8014bd5e",
+    "cell_sources_unchanged": true,
+    "outputs_and_metadata_removed": true,
+    "cells": 19
+  },
+  "laptop": {
+    "source_file": "model2.ipynb",
+    "original_sha256": "58d0ede16a3ebc0485ce3b587d06bb09fe619216416691f02810df0e8de07401",
+    "export_file": "model2.laptop.ipynb",
+    "export_sha256": "968f82e647bab7d69eff456014ac476c6ddea76b5ff0d3c44ea76f532b3c95ca",
+    "cell_sources_unchanged": true,
+    "outputs_and_metadata_removed": true,
+    "cells": 21
+  },
+  "model_class": {
+    "source": "laptop notebook model-definition cell",
+    "source_unchanged": true,
+    "sha256": "b7917029f50ad9056bb65cd5f8ebd4fb9e0d0e0bee539f53861fb86ddd382de2"
+  }
+}

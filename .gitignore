@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv*/
+runs/
+data/
+train_images/
+test_images/
+*.pth
+*.pt
+*.csv
+*.jpg
+*.jpeg
+*.png
+.DS_Store
+*.egg-info/
