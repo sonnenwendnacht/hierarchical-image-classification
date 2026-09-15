@@ -1,0 +1,5 @@
+# Install torch/torchvision from the CPU index for the offline demo and tests.
+torch==2.9.1
+torchvision==0.24.1
+numpy==2.4.2
+Pillow==12.1.1

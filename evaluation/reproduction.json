@@ -1,0 +1,13 @@
+{
+  "scope": "same configuration, seed, environment and data; not an independent-seed experiment",
+  "report_sha256": [
+    "b5dbab2b075d52f4e4a659c517e8b2746c2b3c82dfe98cdd7d0e350698909f02",
+    "cc40eb5a2180f0f5ac0091471358171e570aad012eaa234364e394dedec2db5a"
+  ],
+  "tensor_count": 160,
+  "all_tensors_identical": true,
+  "checkpoint_metadata_identical": true,
+  "reports_identical_except_wall_seconds": true,
+  "recorded_source_hashes_match_current_code": true,
+  "passed": true
+}

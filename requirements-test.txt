@@ -1,0 +1,3 @@
+-r requirements.txt
+# Used only to instantiate the unchanged historical notebook model in a test.
+pandas==2.3.3

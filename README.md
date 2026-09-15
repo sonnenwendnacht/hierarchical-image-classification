@@ -1,0 +1,125 @@
+# Hierarchical image classification
+
+[![Tests](https://github.com/sonnenwendnacht/hierarchical-image-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/sonnenwendnacht/hierarchical-image-classification/actions/workflows/tests.yml)
+
+A code-only portfolio copy of **Junzhe Zong's contribution to a team COMS 4776
+project**, developed with Matt and Adarsh Pachori. The model combines a ResNet18
+image backbone, a superclass gate, and per-superclass subclass experts.
+[Team attribution and source history](PROVENANCE.md).
+
+For a subclass `c` with parent superclass `p`, the model computes:
+
+```text
+P(c | image) = P(p | image) × P(c | p, image)
+```
+
+This release preserves the original notebook sources separately and provides a
+tested extraction with corrected data splitting. It is not a new model paper,
+an independently authored replacement for the team project, or a validated
+open-set recognition system.
+
+## Quick start: no dataset or model download
+
+Tested with Python 3.12 and the CPU dependencies below:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-test.txt
+python -m unittest discover -s tests -v
+python -m hierarchical.demo
+```
+
+The demo uses random image tensors and randomly initialized weights to verify
+forward/backward execution; its output is not an accuracy result. Tests include
+equivalence to the original notebook model under matching parameters,
+probability normalization, finite gradients, hierarchy-consistent predictions,
+duplicate-safe splitting, deterministic evaluation transforms, and a complete
+small CPU training/checkpoint round trip.
+
+All 19 tests passed in both a fresh Python 3.12 CPU environment and the existing
+Python 3.14 environment. Hosted CI repeats the CPU installation and tests.
+
+## Fresh held-out evaluation
+
+The recorded experiment uses 6,288 local course images: 87 observed subclasses
+under bird, dog, and reptile superclasses. The data's upstream redistribution
+terms are unverified, so no course images or annotations are uploaded.
+
+| Split / metric | Result |
+| --- | ---: |
+| Training / validation / test images | 3,768 / 1,260 / 1,260 |
+| Exact decoded-image overlap between splits | 0 |
+| Training budget | 5 epochs |
+| Selected epoch, using validation accuracy | 5 |
+| Held-out subclass accuracy | **79.84%** |
+| Held-out macro subclass recall | 79.83% |
+| Held-out superclass accuracy, consistent label pairs | 99.60% |
+
+See [the machine-readable record](evaluation/seed42-five-epochs.json) for every
+epoch, configuration, data/split/code hashes, pretrained-weight hash, and runtime
+versions. The test split was evaluated only after checkpoint selection on the
+validation split. Balancing and random augmentation apply only to training.
+
+A second full run with the same configuration reproduced every metric and all
+160 checkpoint tensors exactly. See the [reproduction check](evaluation/reproduction.json).
+This is same-seed reproducibility, not a second independent statistical trial.
+
+```sh
+python verify_reproduction.py runs/first-run runs/second-run
+```
+
+This is one fixed-seed, short training experiment—not an estimate across
+independent seeds, a comparison with other architectures, or a leaderboard
+result. Exact-pixel grouping does not detect near-duplicates. The preserved
+notebooks split an already balanced dataset and use a different training budget,
+so their saved scores are not directly comparable.
+
+## Training on authorized local data
+
+Expected layout (not distributed):
+
+```text
+your-data/
+  train_data.csv   # image, superclass_index, subclass_index
+  train_images/    # filenames referenced by the CSV
+```
+
+Labels are mapped from observed training-table IDs. Each subclass must have a
+single parent and at least three distinct image groups so it can appear in all
+three splits. Additional annotation columns are ignored.
+
+```sh
+python -m hierarchical.train \
+  --data-dir /path/to/your-data \
+  --output runs/my-experiment \
+  --epochs 5 --seed 42 --device cpu
+```
+
+This command starts from random weights. The recorded experiment instead used
+an existing local torchvision ImageNet-1K ResNet18 state dictionary, passed with
+`--weights-path /path/to/resnet18-f37072fd.pth`, and `--device cuda` in the
+pre-existing GPU environment documented in the record. Only load a trusted
+checkpoint. There is no automatic data or weight download, and a run refuses to
+overwrite an existing metrics/checkpoint result.
+
+The recorded GPU environment is a pre-existing PyTorch nightly installation;
+the pinned CPU environment is for installation, model equivalence, and pipeline
+tests. Identical numerical results across those environments are not promised.
+
+## Scope and limits
+
+- Known-class classification only. The unrepresented `novel` mapping entries are
+  not learned classes; original threshold heuristics are retained only in the
+  historical notebooks. No novelty-detection accuracy or threshold calibration
+  is claimed.
+- No raw datasets, prediction CSVs, image outputs, pretrained weights, or trained
+  checkpoints are committed. Full real-data reproduction requires authorized
+  access to the original data and the recorded pretrained weights.
+- The backbone and gated-expert idea are established techniques. What this
+  repository demonstrates is the team's application, Junzhe's model2 work, and
+  explicitly documented maintenance and verification.
+- The private [team repository](https://github.com/MatthewLee72/coms4776-nndl-final-project)
+  is unchanged. This public copy intentionally excludes its private history and
+  other teammates' model implementations.
