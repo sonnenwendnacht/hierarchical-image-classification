@@ -7,6 +7,7 @@ from collections import Counter
 import copy
 import hashlib
 import json
+import math
 from pathlib import Path
 import platform
 import random
@@ -35,7 +36,11 @@ def evaluate(model, loader, device):
         for images, parents, children in loader:
             images, parents, children = images.to(device), parents.to(device), children.to(device)
             gate, log_probs = model(images)
+            if not torch.isfinite(gate).all() or not torch.isfinite(log_probs).all():
+                raise RuntimeError('nonfinite evaluation output')
             loss = classification_loss(gate, log_probs, parents, children)
+            if not torch.isfinite(loss):
+                raise RuntimeError('nonfinite evaluation loss')
             predicted = log_probs.argmax(1)
             total += len(images)
             total_loss += loss.item() * len(images)
@@ -54,8 +59,9 @@ def evaluate(model, loader, device):
 
 
 def train(args):
-    if args.epochs < 1 or args.batch_size < 2 or args.learning_rate <= 0:
-        raise ValueError("epochs >= 1, batch_size >= 2, learning_rate > 0 required")
+    if (args.epochs < 1 or args.batch_size < 2
+            or not math.isfinite(args.learning_rate) or args.learning_rate <= 0):
+        raise ValueError("epochs >= 1, batch_size >= 2, finite learning_rate > 0 required")
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -75,6 +81,8 @@ def train(args):
         raise ValueError("output directory already contains results; choose a fresh directory")
     records, hierarchy, super_ids, sub_ids = load_records(args.data_dir)
     parts = split_records(records, seed=args.seed)
+    if len(parts['train']) < 2:
+        raise ValueError("at least two training examples are required")
     image_root = Path(args.data_dir) / 'train_images'
     datasets = {k: ImageDataset(image_root, v, training=k == 'train') for k, v in parts.items()}
     sampler = WeightedRandomSampler(balance_weights(parts['train']), len(parts['train']),
@@ -119,7 +127,7 @@ def train(args):
             count += len(images)
         metrics = evaluate(model, eval_loaders['validation'], device)
         history.append({'epoch': epoch, 'training_loss': total_loss / count, 'validation': metrics})
-        print(json.dumps(history[-1]), flush=True)
+        print(json.dumps(history[-1], allow_nan=False), flush=True)
         if metrics['subclass_accuracy'] > best_score:
             best_score = metrics['subclass_accuracy']
             best_epoch = epoch
@@ -151,10 +159,12 @@ def train(args):
               'selection': 'highest validation subclass accuracy; first epoch wins ties',
               'best_epoch': best_epoch, 'history': history, 'test': test_metrics,
               'wall_seconds': time.monotonic() - started}
+    # Validate the complete report before writing either output artifact.
+    rendered_report = json.dumps(report, indent=2, allow_nan=False) + '\n'
     torch.save({'state_dict': best_state, 'hierarchy': hierarchy, 'superclass_ids': super_ids,
                 'subclass_ids': sub_ids, 'best_epoch': best_epoch}, output / 'best.pt')
-    (output / 'metrics.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps({'best_epoch': best_epoch, 'test': test_metrics}), flush=True)
+    (output / 'metrics.json').write_text(rendered_report)
+    print(json.dumps({'best_epoch': best_epoch, 'test': test_metrics}, allow_nan=False), flush=True)
     return report
 
 

@@ -38,8 +38,22 @@ probability normalization, finite gradients, hierarchy-consistent predictions,
 duplicate-safe splitting, deterministic evaluation transforms, and a complete
 small CPU training/checkpoint round trip.
 
-All 19 tests passed in both a fresh Python 3.12 CPU environment and the existing
+All 25 tests passed in both a Python 3.12 CPU environment and the existing
 Python 3.14 environment. Hosted CI repeats the CPU installation and tests.
+
+### Numerical and small-dataset guards
+
+The September 16 follow-up rejects nonfinite model outputs or evaluation loss
+before computing predictions or selecting a checkpoint. Learning rates must be
+finite and positive, and the final training split must contain at least two
+examples for the batch-normalized heads. JSON serialization is strict and is
+validated before either checkpoint or metrics is written.
+
+Six new regression tests cover these failure cases and hand-calculated metrics
+with unequal class frequencies and a partial final batch. A separate one-epoch
+run on 24 generated images matched the pre-fix implementation's metrics, all
+150 checkpoint tensors, and Python/NumPy/PyTorch RNG states exactly. This checks
+that valid training behavior is preserved; it is not a real-data accuracy run.
 
 ## Fresh held-out evaluation
 
@@ -61,6 +75,13 @@ See [the machine-readable record](evaluation/seed42-five-epochs.json) for every
 epoch, configuration, data/split/code hashes, pretrained-weight hash, and runtime
 versions. The test split was evaluated only after checkpoint selection on the
 validation split. Balancing and random augmentation apply only to training.
+
+This result and its reproduction record are preserved from release
+`f5850ea4e5913cbc2a64a718d14053665dd17c0f`, before the numerical guards above.
+Their source hashes identify that release, not the newer guard code. The full
+course-image experiment was not rerun for this follow-up, and its scores were
+not overwritten. Use the recorded revision for exact historical reproduction;
+the verification script intentionally reports a source mismatch on newer code.
 
 A second full run with the same configuration reproduced every metric and all
 160 checkpoint tensors exactly. See the [reproduction check](evaluation/reproduction.json).
@@ -88,7 +109,9 @@ your-data/
 
 Labels are mapped from observed training-table IDs. Each subclass must have a
 single parent and at least three distinct image groups so it can appear in all
-three splits. Additional annotation columns are ignored.
+three splits. The final training split must also contain at least two images;
+three total image groups in a one-subclass dataset are insufficient for training.
+Additional annotation columns are ignored.
 
 ```sh
 python -m hierarchical.train \

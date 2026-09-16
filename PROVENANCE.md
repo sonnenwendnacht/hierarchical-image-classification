@@ -71,6 +71,12 @@ The following are new maintenance changes, not original research claims:
   reported separately.
 - Add tests, an offline synthetic-tensor demo, a standalone training entry
   point, pinned CPU dependencies, CI, and new five-epoch evaluation records.
+- September 16 numerical follow-up: reject nonfinite evaluation outputs/loss,
+  nonfinite learning rates, and a one-example training split; validate strict
+  JSON before output artifacts are written. These are failure-boundary guards,
+  not model changes. Six added regression methods and a synthetic before/after
+  training comparison preserve the valid path. Earlier real-data evaluation
+  records and all historical sources remain unchanged at their recorded hashes.
 
 The original balanced-dataset split can repeat a source image across training
 and validation. Its probability thresholds, hard maximum-logit thresholds, and
