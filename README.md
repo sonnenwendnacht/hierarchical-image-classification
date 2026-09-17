@@ -2,9 +2,10 @@
 
 [![Tests](https://github.com/sonnenwendnacht/hierarchical-image-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/sonnenwendnacht/hierarchical-image-classification/actions/workflows/tests.yml)
 
-A code-only portfolio copy of **Junzhe Zong's contribution to a team COMS 4776
-project**, developed with Matt and Adarsh Pachori. The model combines a ResNet18
-image backbone, a superclass gate, and per-superclass subclass experts.
+A hierarchical image classifier combining a ResNet18 backbone, a superclass
+gate, and per-superclass subclass experts. This code-only repository presents
+**Junzhe Zong's model2 contribution to a team COMS 4776 project**, developed
+with Matt and Adarsh Pachori.
 [Team attribution and source history](PROVENANCE.md).
 
 For a subclass `c` with parent superclass `p`, the model computes:
@@ -13,14 +14,24 @@ For a subclass `c` with parent superclass `p`, the model computes:
 P(c | image) = P(p | image) × P(c | p, image)
 ```
 
-This release preserves the original notebook sources separately and provides a
-tested extraction with corrected data splitting. It is not a new model paper,
-an independently authored replacement for the team project, or a validated
-open-set recognition system.
+Original notebook sources are preserved separately. September 2026 AI-assisted
+maintenance adds a tested extraction with corrected data splitting. Evaluation
+is limited to known classes; the original novelty heuristics are not validated
+as an open-set recognition system.
+
+[Offline demo](#quick-start-no-dataset-or-model-download) ·
+[Recorded evaluation](#recorded-held-out-evaluation) ·
+[Local training](#training-on-authorized-local-data) · [Team provenance](PROVENANCE.md)
+
+The recorded five-epoch experiment, initialized with ImageNet ResNet18 weights,
+achieved 79.84% subclass accuracy on a 1,260-image held-out split after
+validation-only checkpoint selection. This is one fixed-seed, known-class
+experiment with exact-pixel grouping, not a
+cross-seed or near-duplicate-free benchmark. The course dataset is not bundled.
 
 ## Quick start: no dataset or model download
 
-Tested with Python 3.12 and the CPU dependencies below:
+From the repository root, use Python 3.12 and the CPU dependencies below:
 
 ```sh
 python3 -m venv .venv
@@ -35,27 +46,13 @@ The demo uses random image tensors and randomly initialized weights to verify
 forward/backward execution; its output is not an accuracy result. Tests include
 equivalence to the original notebook model under matching parameters,
 probability normalization, finite gradients, hierarchy-consistent predictions,
-duplicate-safe splitting, deterministic evaluation transforms, and a complete
+exact-pixel-group splitting, deterministic evaluation transforms, and a complete
 small CPU training/checkpoint round trip.
 
 All 25 tests passed in both a Python 3.12 CPU environment and the existing
 Python 3.14 environment. Hosted CI repeats the CPU installation and tests.
 
-### Numerical and small-dataset guards
-
-The September 16 follow-up rejects nonfinite model outputs or evaluation loss
-before computing predictions or selecting a checkpoint. Learning rates must be
-finite and positive, and the final training split must contain at least two
-examples for the batch-normalized heads. JSON serialization is strict and is
-validated before either checkpoint or metrics is written.
-
-Six new regression tests cover these failure cases and hand-calculated metrics
-with unequal class frequencies and a partial final batch. A separate one-epoch
-run on 24 generated images matched the pre-fix implementation's metrics, all
-150 checkpoint tensors, and Python/NumPy/PyTorch RNG states exactly. This checks
-that valid training behavior is preserved; it is not a real-data accuracy run.
-
-## Fresh held-out evaluation
+## Recorded held-out evaluation
 
 The recorded experiment uses 6,288 local course images: 87 observed subclasses
 under bird, dog, and reptile superclasses. The data's upstream redistribution
@@ -77,7 +74,8 @@ versions. The test split was evaluated only after checkpoint selection on the
 validation split. Balancing and random augmentation apply only to training.
 
 This result and its reproduction record are preserved from release
-`f5850ea4e5913cbc2a64a718d14053665dd17c0f`, before the numerical guards above.
+`f5850ea4e5913cbc2a64a718d14053665dd17c0f`, before the later
+[numerical guards](#numerical-and-small-dataset-guards).
 Their source hashes identify that release, not the newer guard code. The full
 course-image experiment was not rerun for this follow-up, and its scores were
 not overwritten. Use the recorded revision for exact historical reproduction;
@@ -96,6 +94,20 @@ independent seeds, a comparison with other architectures, or a leaderboard
 result. Exact-pixel grouping does not detect near-duplicates. The preserved
 notebooks split an already balanced dataset and use a different training budget,
 so their saved scores are not directly comparable.
+
+## Numerical and small-dataset guards
+
+The September 16 follow-up rejects nonfinite model outputs or evaluation loss
+before computing predictions or selecting a checkpoint. Learning rates must be
+finite and positive, and the final training split must contain at least two
+examples for the batch-normalized heads. JSON serialization is strict and is
+validated before either checkpoint or metrics is written.
+
+Six new regression tests cover these failure cases and hand-calculated metrics
+with unequal class frequencies and a partial final batch. A separate one-epoch
+run on 24 generated images matched the pre-fix implementation's metrics, all
+150 checkpoint tensors, and Python/NumPy/PyTorch RNG states exactly. This checks
+that valid training behavior is preserved; it is not a real-data accuracy run.
 
 ## Training on authorized local data
 
