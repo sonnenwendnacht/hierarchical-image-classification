@@ -49,7 +49,7 @@ probability normalization, finite gradients, hierarchy-consistent predictions,
 exact-pixel-group splitting, deterministic evaluation transforms, and a complete
 small CPU training/checkpoint round trip.
 
-All 25 tests passed in both a Python 3.12 CPU environment and the existing
+All 35 tests passed in both a Python 3.12 CPU environment and the existing
 Python 3.14 environment. Hosted CI repeats the CPU installation and tests.
 
 ## Recorded held-out evaluation
@@ -89,6 +89,9 @@ This is same-seed reproducibility, not a second independent statistical trial.
 python verify_reproduction.py runs/first-run runs/second-run
 ```
 
+Add `--output verification.json` to save a new verification record. Existing
+output paths, including aliases to input reports or checkpoints, are refused.
+
 This is one fixed-seed, short training experiment—not an estimate across
 independent seeds, a comparison with other architectures, or a leaderboard
 result. Exact-pixel grouping does not detect near-duplicates. The preserved
@@ -125,6 +128,12 @@ three splits. The final training split must also contain at least two images;
 three total image groups in a one-subclass dataset are insufficient for training.
 Additional annotation columns are ignored.
 
+Choose a new output directory, even if an existing directory is empty. The
+training command reserves the directory before loading data so another run
+cannot reuse it. Failed or interrupted runs retain their directory and any
+partial artifacts; nothing is automatically deleted, and retries need a new
+output path.
+
 ```sh
 python -m hierarchical.train \
   --data-dir /path/to/your-data \
@@ -137,7 +146,7 @@ an existing local torchvision ImageNet-1K ResNet18 state dictionary, passed with
 `--weights-path /path/to/resnet18-f37072fd.pth`, and `--device cuda` in the
 pre-existing GPU environment documented in the record. Only load a trusted
 checkpoint. There is no automatic data or weight download, and a run refuses to
-overwrite an existing metrics/checkpoint result.
+reuse an existing output directory.
 
 The recorded GPU environment is a pre-existing PyTorch nightly installation;
 the pinned CPU environment is for installation, model equivalence, and pipeline

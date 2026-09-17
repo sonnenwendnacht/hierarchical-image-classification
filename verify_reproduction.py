@@ -30,13 +30,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('first', type=Path)
     parser.add_argument('second', type=Path)
-    parser.add_argument('--output', type=Path)
+    parser.add_argument('--output', type=Path, help='write a new JSON file; existing paths are refused')
     args = parser.parse_args()
-    result = verify(args.first, args.second)
-    rendered = json.dumps(result, indent=2) + '\n'
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(rendered)
+    try:
+        if args.output and (args.output.exists() or args.output.is_symlink()):
+            raise ValueError("output already exists; choose a new file")
+        result = verify(args.first, args.second)
+        rendered = json.dumps(result, indent=2, allow_nan=False) + '\n'
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            # Exclusive creation also protects against races and input aliases.
+            with args.output.open('x', encoding='utf-8') as stream:
+                stream.write(rendered)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
     print(rendered, end='')
     return int(not result['passed'])
 

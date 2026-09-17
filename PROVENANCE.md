@@ -77,6 +77,11 @@ The following are new maintenance changes, not original research claims:
   not model changes. Six added regression methods and a synthetic before/after
   training comparison preserve the valid path. Earlier real-data evaluation
   records and all historical sources remain unchanged at their recorded hashes.
+- Output-safety follow-up: reserve a fresh training directory atomically before
+  data loading, retain failed runs, and write verification records exclusively
+  without replacing existing files or input aliases. Ten added tests exercise
+  reservation, output races, aliases, strict serialization, and valid CLI use;
+  model computation, evaluation, and recorded artifacts are unchanged.
 
 The original balanced-dataset split can repeat a source image across training
 and validation. Its probability thresholds, hard maximum-logit thresholds, and

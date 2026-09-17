@@ -76,9 +76,12 @@ def train(args):
     if device.type == 'cuda' and not torch.cuda.is_available():
         raise ValueError("CUDA requested but unavailable")
     output = Path(args.output)
-    output.mkdir(parents=True, exist_ok=True)
-    if (output / 'metrics.json').exists() or (output / 'best.pt').exists():
-        raise ValueError("output directory already contains results; choose a fresh directory")
+    # Reserve this run before loading data or constructing a model. A failed
+    # run keeps its directory so another invocation cannot reuse it silently.
+    try:
+        output.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise ValueError("output directory already exists; choose a fresh directory") from exc
     records, hierarchy, super_ids, sub_ids = load_records(args.data_dir)
     parts = split_records(records, seed=args.seed)
     if len(parts['train']) < 2:
